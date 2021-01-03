@@ -1,14 +1,9 @@
-use uuid::Uuid;
-
 extern crate redis;
+use uuid::Uuid;
+use crate::database_logic;
 
-use redis::Commands;
-
-pub fn create_room(request_body: &String) -> String {
-
+pub fn create_room() -> String {
     let my_uuid = Uuid::new_v4();
-    let client = redis::Client::open("redis://redis:6379").unwrap();
-    let mut con = client.get_connection().unwrap();
-    let _: () = con.incr("api_count_create", 1).unwrap();
-    format!("{{\"roomUrl\": \"{}\"}}", my_uuid)
+    database_logic::create_room(my_uuid.to_string()).unwrap();
+    format!("{{\"room_uuid\": \"{}\"}}", my_uuid)
 }
