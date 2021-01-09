@@ -1,14 +1,17 @@
 mod logic;
 mod database_logic;
 
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_cors::Cors;
+use actix_web::{get, post, put, App, HttpResponse, HttpServer, Responder, HttpRequest, web::Bytes};
 use actix_web::web::Query;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
+
+extern crate simple_error;
 
 #[post("/create")]
 async fn create() -> impl Responder {
     let response_body = logic::create_room();
-    HttpResponse::Ok().body(response_body)
+    HttpResponse::Ok().header("Access-Control-Allow-Origin", "*").body(response_body)
 }
 
 #[derive(Deserialize)]
@@ -18,21 +21,37 @@ struct RoomUuid {
 
 #[get("/manage")]
 async fn manage(room_uuid: Query<RoomUuid>) -> impl Responder {
-    let room_info = database_logic::get_room_info(room_uuid.room_uuid.clone()).unwrap();
-    HttpResponse::Ok().body(room_info)
+    match database_logic::get_room_info(room_uuid.room_uuid.clone()) {
+        Ok(room_info) => HttpResponse::Ok().header("Access-Control-Allow-Origin", "*").body(room_info),
+        Err(_) =>
+            HttpResponse::NotFound().header("Access-Control-Allow-Origin", "*").finish()
+    }
+}
+
+#[put("/save")]
+async fn save(bytes: Bytes, room_uuid: Query<RoomUuid>) -> impl Responder {
+    match database_logic::update_room(room_uuid.room_uuid.clone(), String::from_utf8(bytes.to_vec()).unwrap()) {
+        Ok(_) => HttpResponse::Ok().header("Access-Control-Allow-Origin", "*").finish(),
+        Err(_) =>
+            HttpResponse::InternalServerError().header("Access-Control-Allow-Origin", "*").finish()
+    }
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let address = "0.0.0.0:9631";
     let server = HttpServer::new(|| {
+        let cors = Cors::default().allow_any_origin().allow_any_method().allow_any_header();
+
         App::new()
+            .wrap(cors)
             .service(create)
             .service(manage)
+            .service(save)
     })
         .bind(address)?
         .run();
-    println!("LLLLL Group trivia server has started and listening to {}", address);
+    println!("Group trivia server has started and listening to {}", address);
 
     server.await
 }
