@@ -2,21 +2,27 @@ mod logic;
 mod database_logic;
 
 use actix_cors::Cors;
-use actix_web::{get, post, put, App, HttpResponse, HttpServer, Responder, HttpRequest, web::Bytes};
+use actix_web::{get, post, put, App, HttpResponse, HttpServer, Responder, web::Bytes};
 use actix_web::web::Query;
 use serde::{Deserialize};
 
 extern crate simple_error;
 
 #[post("/create")]
-async fn create() -> impl Responder {
-    let response_body = logic::create_room();
+async fn create(bytes: Bytes) -> impl Responder {
+    let info: CreateRoomInfo = serde_json::from_str(&String::from_utf8(bytes.to_vec()).unwrap()).unwrap();
+    let response_body = logic::create_room(&info.title);
     HttpResponse::Ok().header("Access-Control-Allow-Origin", "*").body(response_body)
 }
 
 #[derive(Deserialize)]
 struct RoomUuid {
     room_uuid: String,
+}
+
+#[derive(Deserialize)]
+struct CreateRoomInfo {
+    title: String,
 }
 
 #[get("/manage")]

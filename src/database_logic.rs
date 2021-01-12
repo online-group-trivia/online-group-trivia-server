@@ -9,11 +9,11 @@ pub struct RoomInfo {
     questions: Vec<String>,
 }
 
-pub fn create_room(room_uuid: String) -> Result<(), Box<dyn Error>> {
+pub fn create_room(room_uuid: String, room_name:&String) -> Result<(), Box<dyn Error>> {
     let client = redis::Client::open("redis://redis:6379")?;
     let mut con = client.get_connection()?;
     let room_info = RoomInfo {
-        title: "Title".to_owned(),
+        title: room_name.to_owned(),
         questions: vec![],
     };
     let _: () = con.set(room_uuid, serde_json::to_string(&room_info)?)?;
