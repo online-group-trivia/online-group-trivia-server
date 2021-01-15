@@ -17,6 +17,7 @@ async fn create(bytes: Bytes) -> impl Responder {
 
 #[derive(Deserialize)]
 struct RoomUuid {
+    // TODO rename
     room_uuid: String,
 }
 
