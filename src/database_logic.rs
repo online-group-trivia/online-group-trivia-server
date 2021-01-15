@@ -13,7 +13,7 @@ pub struct RoomInfo {
 
 pub fn create_room(room_uuid: String, room_name:&String) -> Result<(), Box<dyn Error>> {
     // TODO Return room info as well
-    // TODO Rename (room/game/template)
+    // TODO Rename (room/game/template).
     let client = redis::Client::open("redis://redis:6379")?;
     let mut con = client.get_connection()?;
     let room_info = RoomInfo {
