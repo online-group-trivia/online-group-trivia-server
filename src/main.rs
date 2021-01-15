@@ -16,8 +16,7 @@ async fn create(bytes: Bytes) -> impl Responder {
 }
 
 #[derive(Deserialize)]
-struct RoomUuid {
-    // TODO rename
+struct ManageRoomQuery {
     room_uuid: String,
 }
 
@@ -27,8 +26,8 @@ struct CreateRoomInfo {
 }
 
 #[get("/manage")]
-async fn manage(room_uuid: Query<RoomUuid>) -> impl Responder {
-    match database_logic::get_room_info(room_uuid.room_uuid.clone()) {
+async fn manage(manage_room_query: Query<ManageRoomQuery>) -> impl Responder {
+    match database_logic::get_room_info(manage_room_query.room_uuid.clone()) {
         Ok(room_info) => HttpResponse::Ok().header("Access-Control-Allow-Origin", "*").body(room_info),
         Err(_) =>
             HttpResponse::NotFound().header("Access-Control-Allow-Origin", "*").finish()
@@ -36,7 +35,7 @@ async fn manage(room_uuid: Query<RoomUuid>) -> impl Responder {
 }
 
 #[put("/save")]
-async fn save(bytes: Bytes, room_uuid: Query<RoomUuid>) -> impl Responder {
+async fn save(bytes: Bytes, room_uuid: Query<ManageRoomQuery>) -> impl Responder {
     match database_logic::update_room(room_uuid.room_uuid.clone(), String::from_utf8(bytes.to_vec()).unwrap()) {
         Ok(_) => HttpResponse::Ok().header("Access-Control-Allow-Origin", "*").finish(),
         Err(_) =>
