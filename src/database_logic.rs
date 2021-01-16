@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
 use redis::Commands;
-use std::error::Error;
+use serde::{Deserialize, Serialize};
 use simple_error::SimpleError;
+use std::error::Error;
 use uuid::Uuid;
 // TODO use connection pool
 
@@ -12,7 +12,7 @@ pub struct GameInfo {
     questions: Vec<String>,
 }
 
-pub fn create_game(title:&String) -> Result<GameInfo, Box<dyn Error>> {
+pub fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
     let id = Uuid::new_v4();
     let client = redis::Client::open("redis://redis:6379")?;
     let mut con = client.get_connection()?;

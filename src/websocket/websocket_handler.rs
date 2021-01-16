@@ -1,12 +1,10 @@
-use std::time::{Duration, Instant};
+use crate::websocket::websocket_routing::handle_client_message;
 use actix::prelude::*;
 use actix_web_actors::ws;
-use crate::websocket::websocket_routing::handle_client_message;
+use std::time::{Duration, Instant};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
-
-
 
 pub struct MyWebSocket {
     hb: Instant,
@@ -17,16 +15,11 @@ impl Actor for MyWebSocket {
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
     }
-
 }
 
 /// Handler for `ws::Message`
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
-    fn handle(
-        &mut self,
-        msg: Result<ws::Message, ws::ProtocolError>,
-        ctx: &mut Self::Context,
-    ) {
+    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         // process websocket_handler messages
         println!("WS: {:?}", msg);
         match msg {
@@ -39,7 +32,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
             }
             Ok(ws::Message::Text(text)) => {
                 ctx.text(handle_client_message(&text));
-            },
+            }
             Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
             Ok(ws::Message::Close(reason)) => {
                 ctx.close(reason);
