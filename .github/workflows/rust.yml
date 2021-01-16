@@ -20,3 +20,5 @@ jobs:
       run: cargo build --release --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Rust format check
+      run: cargo fmt -- --check
