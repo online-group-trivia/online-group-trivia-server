@@ -1,8 +1,7 @@
-use uuid::Uuid;
 use crate::database_logic;
+use crate::database_logic::GameInfo;
+use std::error::Error;
 
-pub fn create_room(room_name:&String) -> String {
-    let my_uuid = Uuid::new_v4();
-    database_logic::create_room(my_uuid.to_string(), room_name).unwrap();
-    format!("{{\"room_uuid\": \"{}\"}}", my_uuid)
+pub fn create_room(room_name:&String) -> Result<GameInfo,Box<dyn Error>> {
+    database_logic::create_game(room_name)
 }
