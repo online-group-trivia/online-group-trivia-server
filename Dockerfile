@@ -1,16 +1,13 @@
-FROM rust
+FROM rust as build
+ENV PKG_CONFIG_ALLOW_CROSS=1
 
 WORKDIR /usr/src/app
-RUN echo "fn main() {}" > dummy.rs
-COPY Cargo.toml .
-RUN sed -i 's#src/main.rs#dummy.rs#' Cargo.toml
-
-# Build all dependencies (cached)
-RUN cargo build
-
-
-RUN sed -i 's#dummy.rs#src/main.rs#' Cargo.toml
 COPY . .
-RUN cargo build
+
+RUN cargo install --path .
+
+FROM gcr.io/distroless/cc-debian10
+
+COPY --from=build /usr/local/cargo/bin/app /usr/local/bin/app
 EXPOSE 9631
-CMD ["target/debug/app"]
+CMD ["app"]
