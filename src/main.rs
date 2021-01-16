@@ -1,12 +1,21 @@
 mod logic;
 mod database_logic;
+mod websocket;
 
 use actix_cors::Cors;
-use actix_web::{get, post, put, App, HttpResponse, HttpServer, Responder, web::Bytes};
+use actix_web::{get, post, put, App, HttpResponse, HttpServer, Responder, web::Bytes, web, HttpRequest, Error};
 use actix_web::web::{Query, Json};
 use serde::{Deserialize};
+use actix_web_actors::ws;
 
 extern crate simple_error;
+
+async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
+    println!("{:?}", r);
+    let res = ws::start(websocket::websocket_handler::MyWebSocket::new(), &r, stream);
+    println!("{:?}", res);
+    res
+}
 
 #[derive(Deserialize)]
 struct CreateRoomInfo {
@@ -60,6 +69,7 @@ async fn main() -> std::io::Result<()> {
             .service(create)
             .service(manage)
             .service(save)
+            .service(web::resource("/ws/").route(web::get().to(ws_index)))
     })
         .bind(address)?
         .run();
