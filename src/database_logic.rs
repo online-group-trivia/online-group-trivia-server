@@ -51,19 +51,22 @@ pub struct RedisRoomInfo {
 impl RedisRoomInfo {
     fn new(room_info: &RoomInfo) -> RedisRoomInfo {
         RedisRoomInfo {
-            title: room_info.title.to_owned(),
-            teams_info: room_info.teams_info.to_owned(),
-            questions: room_info.questions.to_owned(),
+            title: room_info.title.clone(),
+            teams_info: room_info.teams_info.clone(),
+            questions: room_info.questions.clone(),
         }
     }
 }
 
-pub fn create_room(room_info: &RoomInfo) -> Result<GameInfo, Box<dyn Error>> {
+pub fn create_room(room_info: &RoomInfo) -> Result<(), Box<dyn Error>> {
     let client = redis::Client::open("redis://redis:6379")?;
     let mut con = client.get_connection()?;
 
     let redis_room_info = RedisRoomInfo::new(room_info);
 
-    let _: () = con.set(redis_room_info.id, serde_json::to_string(&redis_room_info)?)?;
-    Ok(game_info)
+    con.set(
+        room_info.id.as_str(),
+        serde_json::to_string(&redis_room_info)?,
+    )?;
+    Ok(())
 }

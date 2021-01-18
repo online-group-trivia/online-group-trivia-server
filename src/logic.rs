@@ -45,5 +45,9 @@ fn create_room_id() -> String {
 }
 
 fn create_id(n: usize) -> String {
-    thread_rng().sample_iter(&Alphanumeric).take(n).collect()
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(n)
+        .map(char::from)
+        .collect()
 }

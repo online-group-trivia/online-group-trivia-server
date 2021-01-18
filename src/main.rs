@@ -72,9 +72,7 @@ async fn save(bytes: Bytes, manage_game_query: Query<ManageGameQuery>) -> impl R
 
 #[post("/start")]
 async fn start(game_id: Json<Uuid>) -> impl Responder {
-    match logic::create_room(
-        &game_id.0,
-    ) {
+    match logic::create_room(&game_id.0) {
         Ok(_) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
             .finish(),

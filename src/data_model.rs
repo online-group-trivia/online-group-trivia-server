@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GameInfo {
     pub id: Uuid,
     pub title: String,
@@ -9,7 +9,7 @@ pub struct GameInfo {
 }
 
 #[serde(rename_all = "camelCase")]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct RoomInfo {
     pub id: String,
     pub title: String,
@@ -17,14 +17,14 @@ pub struct RoomInfo {
     pub questions: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct TeamInfo {
     pub name: String,
     pub participants: Vec<Participant>,
     pub score: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Participant {
     pub name: String,
 }
