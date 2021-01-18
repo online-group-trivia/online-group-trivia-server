@@ -20,13 +20,13 @@ async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, 
 }
 
 #[derive(Deserialize)]
-struct CreateRoomInfo {
+struct CreateGameInfo {
     title: String,
 }
 
 #[post("/create")]
-async fn create(create_room_info: Json<CreateRoomInfo>) -> impl Responder {
-    match logic::create_room(&create_room_info.title) {
+async fn create(create_game_info: Json<CreateGameInfo>) -> impl Responder {
+    match logic::create_game(&create_game_info.title) {
         Ok(response_body) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
             .json(response_body),
@@ -37,16 +37,16 @@ async fn create(create_room_info: Json<CreateRoomInfo>) -> impl Responder {
 }
 
 #[derive(Deserialize)]
-struct ManageRoomQuery {
-    room_uuid: String,
+struct ManageGameQuery {
+    game_uuid: String,
 }
 
 #[get("/manage")]
-async fn manage(manage_room_query: Query<ManageRoomQuery>) -> impl Responder {
-    match database_logic::get_game_info(manage_room_query.room_uuid.clone()) {
-        Ok(room_info) => HttpResponse::Ok()
+async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
+    match database_logic::get_game_info(manage_game_query.game_uuid.clone()) {
+        Ok(game_info) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
-            .body(room_info),
+            .body(game_info),
         Err(_) => HttpResponse::NotFound()
             .header("Access-Control-Allow-Origin", "*")
             .finish(),
@@ -54,9 +54,9 @@ async fn manage(manage_room_query: Query<ManageRoomQuery>) -> impl Responder {
 }
 
 #[put("/save")]
-async fn save(bytes: Bytes, room_uuid: Query<ManageRoomQuery>) -> impl Responder {
+async fn save(bytes: Bytes, manage_game_query: Query<ManageGameQuery>) -> impl Responder {
     match database_logic::update_game(
-        room_uuid.room_uuid.clone(),
+        manage_game_query.game_uuid.clone(),
         String::from_utf8(bytes.to_vec()).unwrap(),
     ) {
         Ok(_) => HttpResponse::Ok()
