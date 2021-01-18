@@ -1,3 +1,4 @@
+mod data_model;
 mod database_logic;
 mod logic;
 mod websocket;
@@ -9,6 +10,7 @@ use actix_web::{
 };
 use actix_web_actors::ws;
 use serde::Deserialize;
+use uuid::Uuid;
 
 extern crate simple_error;
 
@@ -38,15 +40,15 @@ async fn create(create_game_info: Json<CreateGameInfo>) -> impl Responder {
 
 #[derive(Deserialize)]
 struct ManageGameQuery {
-    game_uuid: String,
+    game_uuid: Uuid,
 }
 
 #[get("/manage")]
 async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
-    match database_logic::get_game_info(manage_game_query.game_uuid.clone()) {
+    match database_logic::get_game_info(&manage_game_query.game_uuid) {
         Ok(game_info) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
-            .body(game_info),
+            .json(game_info),
         Err(_) => HttpResponse::NotFound()
             .header("Access-Control-Allow-Origin", "*")
             .finish(),
@@ -56,8 +58,22 @@ async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
 #[put("/save")]
 async fn save(bytes: Bytes, manage_game_query: Query<ManageGameQuery>) -> impl Responder {
     match database_logic::update_game(
-        manage_game_query.game_uuid.clone(),
+        &manage_game_query.game_uuid,
         String::from_utf8(bytes.to_vec()).unwrap(),
+    ) {
+        Ok(_) => HttpResponse::Ok()
+            .header("Access-Control-Allow-Origin", "*")
+            .finish(),
+        Err(_) => HttpResponse::InternalServerError()
+            .header("Access-Control-Allow-Origin", "*")
+            .finish(),
+    }
+}
+
+#[post("/start")]
+async fn start(game_id: Json<Uuid>) -> impl Responder {
+    match logic::create_room(
+        &game_id.0,
     ) {
         Ok(_) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
