@@ -7,7 +7,7 @@ use std::error::Error;
 use uuid::Uuid;
 // TODO use connection pool
 
-const REDIS_ENDPOINT: &str = "redis://localhost:6379";
+const REDIS_ENDPOINT: &str = "redis://redis:6379";
 
 pub fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
     let id = Uuid::new_v4();

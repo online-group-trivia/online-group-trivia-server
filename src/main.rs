@@ -72,9 +72,9 @@ async fn save(game_info: Json<GameInfo>) -> impl Responder {
 #[post("/start")]
 async fn start(game_id: Json<Uuid>) -> impl Responder {
     match logic::create_room(&game_id.0) {
-        Ok(_) => HttpResponse::Ok()
+        Ok(room_info) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
-            .finish(),
+            .json(room_info),
         Err(_) => HttpResponse::InternalServerError()
             .header("Access-Control-Allow-Origin", "*")
             .finish(),
@@ -95,6 +95,7 @@ async fn main() -> std::io::Result<()> {
             .service(create)
             .service(manage)
             .service(save)
+            .service(start)
             .service(web::resource("/ws/").route(web::get().to(ws_index)))
     })
     .bind(address)?

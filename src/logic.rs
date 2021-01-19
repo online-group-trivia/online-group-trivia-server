@@ -8,6 +8,7 @@ use std::error::Error;
 pub fn create_game(room_name: &String) -> Result<GameInfo, Box<dyn Error>> {
     database_logic::create_game(room_name)
 }
+
 pub fn update_game(game_info: &GameInfo) -> Result<(), Box<dyn Error>> {
     let db_game_info = database::data_model::RedisGameInfo {
         title: game_info.title.to_owned(),
@@ -24,6 +25,7 @@ pub fn get_game_info(id: Uuid) -> Result<GameInfo, Box<dyn Error>> {
         questions: redis_game_info.questions,
     })
 }
+
 pub fn create_room(game_id: &Uuid) -> Result<RoomInfo, Box<dyn Error>> {
     let redis_game_info = database_logic::get_game_info(game_id)?;
     let room_id = create_room_id();
@@ -44,7 +46,7 @@ pub fn create_room(game_id: &Uuid) -> Result<RoomInfo, Box<dyn Error>> {
 
     let room_info = RoomInfo {
         id: room_id,
-        title: "".to_owned(),
+        title: redis_game_info.title,
         teams_info,
         questions: redis_game_info.questions,
     };
@@ -63,5 +65,6 @@ fn create_id(n: usize) -> String {
         .sample_iter(&Alphanumeric)
         .take(n)
         .map(char::from)
+        .map(|c| c.to_ascii_lowercase())
         .collect()
 }
