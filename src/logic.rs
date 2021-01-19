@@ -35,7 +35,7 @@ pub fn create_room(game_id: &Uuid) -> Result<RoomInfo, Box<dyn Error>> {
         questions: game_info.questions,
     };
 
-    database_logic::create_room(&room_info);
+    database_logic::create_room(&room_info)?;
 
     Ok(room_info)
 }
