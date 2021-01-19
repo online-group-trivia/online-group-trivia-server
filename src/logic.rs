@@ -57,7 +57,7 @@ pub fn create_room(game_id: &Uuid) -> Result<RoomInfo, Box<dyn Error>> {
 }
 
 fn create_room_id() -> String {
-    create_id(4)
+    create_id(6)
 }
 
 fn create_id(n: usize) -> String {
