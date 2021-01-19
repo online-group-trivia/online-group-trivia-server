@@ -1,12 +1,13 @@
 mod data_model;
-mod database_logic;
+mod database;
 mod logic;
 mod websocket;
 
+use crate::data_model::GameInfo;
 use actix_cors::Cors;
 use actix_web::web::{Json, Query};
 use actix_web::{
-    get, post, put, web, web::Bytes, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
+    get, post, put, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use actix_web_actors::ws;
 use serde::Deserialize;
@@ -38,14 +39,15 @@ async fn create(create_game_info: Json<CreateGameInfo>) -> impl Responder {
     }
 }
 
+#[serde(rename_all = "camelCase")]
 #[derive(Deserialize)]
 struct ManageGameQuery {
-    game_uuid: Uuid,
+    game_id: Uuid,
 }
 
 #[get("/manage")]
 async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
-    match database_logic::get_game_info(&manage_game_query.game_uuid) {
+    match logic::get_game_info(manage_game_query.game_id) {
         Ok(game_info) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
             .json(game_info),
@@ -56,11 +58,8 @@ async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
 }
 
 #[put("/save")]
-async fn save(bytes: Bytes, manage_game_query: Query<ManageGameQuery>) -> impl Responder {
-    match database_logic::update_game(
-        &manage_game_query.game_uuid,
-        String::from_utf8(bytes.to_vec()).unwrap(),
-    ) {
+async fn save(game_info: Json<GameInfo>) -> impl Responder {
+    match logic::update_game(&game_info.0) {
         Ok(_) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
             .finish(),

@@ -1,4 +1,5 @@
 use crate::data_model::{GameInfo, RoomInfo, TeamInfo};
+use crate::database::data_model::RedisGameInfo;
 use redis::Commands;
 use serde::{Deserialize, Serialize};
 use simple_error::SimpleError;
@@ -6,9 +7,11 @@ use std::error::Error;
 use uuid::Uuid;
 // TODO use connection pool
 
+const REDIS_ENDPOINT: &str = "redis://localhost:6379";
+
 pub fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
     let id = Uuid::new_v4();
-    let client = redis::Client::open("redis://redis:6379")?;
+    let client = redis::Client::open(REDIS_ENDPOINT)?;
     let mut con = client.get_connection()?;
 
     let game_info = GameInfo {
@@ -21,22 +24,23 @@ pub fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
     Ok(game_info)
 }
 
-pub fn get_game_info(game_id: &Uuid) -> Result<GameInfo, Box<dyn Error>> {
-    let client = redis::Client::open("redis://redis:6379")?;
+pub fn get_game_info(game_id: &Uuid) -> Result<RedisGameInfo, Box<dyn Error>> {
+    let client = redis::Client::open(REDIS_ENDPOINT)?;
     let mut con = client.get_connection()?;
     let game_info: String = con.get(game_id.to_string())?;
-    let game_info: GameInfo = serde_json::from_str(&*game_info)?;
-    Ok(game_info)
+    println!("{:?}", game_info);
+    let redis_game_info: RedisGameInfo = serde_json::from_str(&*game_info)?;
+    Ok(redis_game_info)
 }
 
-pub fn update_game(id: &Uuid, data: String) -> Result<(), Box<dyn Error>> {
-    let client = redis::Client::open("redis://redis:6379")?;
+pub fn update_game(id: &Uuid, info: &RedisGameInfo) -> Result<(), Box<dyn Error>> {
+    let client = redis::Client::open(REDIS_ENDPOINT)?;
     let mut con = client.get_connection()?;
     if !con.exists(id.to_string())? {
         Err(SimpleError::new("Game ID not found"))?
     }
 
-    let _: () = con.set(id.to_string(), data)?;
+    let _: () = con.set(id.to_string(), serde_json::to_string(info)?)?;
     Ok(())
 }
 
@@ -59,7 +63,7 @@ impl RedisRoomInfo {
 }
 
 pub fn create_room(room_info: &RoomInfo) -> Result<(), Box<dyn Error>> {
-    let client = redis::Client::open("redis://redis:6379")?;
+    let client = redis::Client::open(REDIS_ENDPOINT)?;
     let mut con = client.get_connection()?;
 
     let redis_room_info = RedisRoomInfo::new(room_info);
