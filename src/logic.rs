@@ -1,9 +1,10 @@
-use crate::data_model::{GameInfo, RoomInfo, TeamInfo};
+use crate::data_model::{GameInfo, RoomInfo, TeamInfo, JoinRoomRequest, Participant};
 use crate::database::database_logic;
 use crate::{database, Uuid};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::error::Error;
+use crate::database::data_model::RedisRoomInfo;
 
 pub fn create_game(room_name: &String) -> Result<GameInfo, Box<dyn Error>> {
     database_logic::create_game(room_name)
@@ -42,7 +43,7 @@ pub fn create_room(game_id: &Uuid) -> Result<RoomInfo, Box<dyn Error>> {
             score: 0,
         },
     ]
-    .to_vec();
+        .to_vec();
 
     let room_info = RoomInfo {
         id: room_id,
@@ -54,6 +55,25 @@ pub fn create_room(game_id: &Uuid) -> Result<RoomInfo, Box<dyn Error>> {
     database_logic::create_room(&room_info)?;
 
     Ok(room_info)
+}
+
+pub fn join_room(join_room_request: &JoinRoomRequest) -> Result<RoomInfo, Box<dyn Error>> {
+    let mut redis_room_info = database_logic::get_room_info(join_room_request.id.to_string())?;
+    add_participant_to_room(&mut redis_room_info, &join_room_request);
+
+    let room_info = RoomInfo::new(&join_room_request.id, redis_room_info);
+    database_logic::create_room(&room_info)?;
+
+    Ok(room_info)
+}
+
+fn add_participant_to_room(redis_room_info: &mut RedisRoomInfo, join_room_request: &JoinRoomRequest) {
+    let team_to_add_to = redis_room_info.teams_info.iter_mut().min_by_key(|team_info| team_info.participants.len()).unwrap();
+    println!("{:#?}", team_to_add_to);
+    let participant = Participant {
+        name: join_room_request.display_name.to_owned()
+    };
+    team_to_add_to.participants.push(participant);
 }
 
 fn create_room_id() -> String {

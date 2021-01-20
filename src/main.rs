@@ -3,7 +3,8 @@ mod database;
 mod logic;
 mod websocket;
 
-use crate::data_model::GameInfo;
+use std::error;
+use crate::data_model::{GameInfo, RoomInfo, JoinRoomRequest};
 use actix_cors::Cors;
 use actix_web::web::{Json, Query};
 use actix_web::{
@@ -71,7 +72,16 @@ async fn save(game_info: Json<GameInfo>) -> impl Responder {
 
 #[post("/start")]
 async fn start(game_id: Json<Uuid>) -> impl Responder {
-    match logic::create_room(&game_id.0) {
+    room_response(logic::create_room(&game_id.0))
+}
+
+#[post("/join")]
+async fn join(join_room_request: Json<JoinRoomRequest>) -> impl Responder {
+    room_response(logic::join_room(&join_room_request.0))
+}
+
+fn room_response(room_info_result: Result<RoomInfo, Box<dyn error::Error>>) -> impl Responder {
+    match room_info_result {
         Ok(room_info) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
             .json(room_info),
@@ -96,10 +106,11 @@ async fn main() -> std::io::Result<()> {
             .service(manage)
             .service(save)
             .service(start)
+            .service(join)
             .service(web::resource("/ws/").route(web::get().to(ws_index)))
     })
-    .bind(address)?
-    .run();
+        .bind(address)?
+        .run();
     println!(
         "Group trivia server has started and listening to {}",
         address

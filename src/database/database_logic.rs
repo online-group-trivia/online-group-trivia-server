@@ -1,17 +1,16 @@
 use crate::data_model::{GameInfo, RoomInfo};
 use crate::database::data_model::{RedisGameInfo, RedisRoomInfo};
-use redis::Commands;
+use redis::{Commands, Connection, RedisResult};
 use simple_error::SimpleError;
 use std::error::Error;
 use uuid::Uuid;
 // TODO use connection pool
 
-const REDIS_ENDPOINT: &str = "redis://redis:6379";
+const REDIS_ENDPOINT: &str = "redis://localhost:6379";
 
 pub fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
     let id = Uuid::new_v4();
-    let client = redis::Client::open(REDIS_ENDPOINT)?;
-    let mut con = client.get_connection()?;
+    let mut con = get_redis_connection()?;
 
     let game_info = GameInfo {
         id,
@@ -24,8 +23,8 @@ pub fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
 }
 
 pub fn get_game_info(game_id: &Uuid) -> Result<RedisGameInfo, Box<dyn Error>> {
-    let client = redis::Client::open(REDIS_ENDPOINT)?;
-    let mut con = client.get_connection()?;
+    let mut con = get_redis_connection()?;
+
     let game_info: String = con.get(game_id.to_string())?;
     println!("{:?}", game_info);
     let redis_game_info: RedisGameInfo = serde_json::from_str(&*game_info)?;
@@ -33,8 +32,8 @@ pub fn get_game_info(game_id: &Uuid) -> Result<RedisGameInfo, Box<dyn Error>> {
 }
 
 pub fn update_game(id: &Uuid, info: &RedisGameInfo) -> Result<(), Box<dyn Error>> {
-    let client = redis::Client::open(REDIS_ENDPOINT)?;
-    let mut con = client.get_connection()?;
+    let mut con = get_redis_connection()?;
+
     if !con.exists(id.to_string())? {
         Err(SimpleError::new("Game ID not found"))?
     }
@@ -44,8 +43,7 @@ pub fn update_game(id: &Uuid, info: &RedisGameInfo) -> Result<(), Box<dyn Error>
 }
 
 pub fn create_room(room_info: &RoomInfo) -> Result<(), Box<dyn Error>> {
-    let client = redis::Client::open(REDIS_ENDPOINT)?;
-    let mut con = client.get_connection()?;
+    let mut con = get_redis_connection()?;
 
     let redis_room_info = RedisRoomInfo::new(room_info);
 
@@ -54,4 +52,18 @@ pub fn create_room(room_info: &RoomInfo) -> Result<(), Box<dyn Error>> {
         serde_json::to_string(&redis_room_info)?,
     )?;
     Ok(())
+}
+
+pub fn get_room_info(room_id: String) -> Result<RedisRoomInfo, Box<dyn Error>> {
+    let mut con = get_redis_connection()?;
+
+    let room_info: String = con.get(room_id)?;
+    println!("{:?}", room_info);
+
+    Ok(serde_json::from_str(&*room_info)?)
+}
+
+fn get_redis_connection() -> RedisResult<Connection>  {
+    let client = redis::Client::open(REDIS_ENDPOINT)?;
+    client.get_connection()
 }
