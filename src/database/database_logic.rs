@@ -1,7 +1,6 @@
-use crate::data_model::{GameInfo, RoomInfo, TeamInfo};
-use crate::database::data_model::RedisGameInfo;
+use crate::data_model::{GameInfo, RoomInfo};
+use crate::database::data_model::{RedisGameInfo, RedisRoomInfo};
 use redis::Commands;
-use serde::{Deserialize, Serialize};
 use simple_error::SimpleError;
 use std::error::Error;
 use uuid::Uuid;
@@ -44,23 +43,6 @@ pub fn update_game(id: &Uuid, info: &RedisGameInfo) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-#[serde(rename_all = "camelCase")]
-#[derive(Serialize, Deserialize)]
-pub struct RedisRoomInfo {
-    pub title: String,
-    pub teams_info: Vec<TeamInfo>,
-    pub questions: Vec<String>,
-}
-
-impl RedisRoomInfo {
-    fn new(room_info: &RoomInfo) -> RedisRoomInfo {
-        RedisRoomInfo {
-            title: room_info.title.clone(),
-            teams_info: room_info.teams_info.clone(),
-            questions: room_info.questions.clone(),
-        }
-    }
-}
 
 pub fn create_room(room_info: &RoomInfo) -> Result<(), Box<dyn Error>> {
     let client = redis::Client::open(REDIS_ENDPOINT)?;
