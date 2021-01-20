@@ -43,7 +43,6 @@ pub fn update_game(id: &Uuid, info: &RedisGameInfo) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-
 pub fn create_room(room_info: &RoomInfo) -> Result<(), Box<dyn Error>> {
     let client = redis::Client::open(REDIS_ENDPOINT)?;
     let mut con = client.get_connection()?;

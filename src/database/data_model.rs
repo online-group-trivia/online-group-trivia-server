@@ -1,5 +1,5 @@
+use crate::data_model::{RoomInfo, TeamInfo};
 use serde::{Deserialize, Serialize};
-use crate::data_model::{TeamInfo, RoomInfo};
 
 #[derive(Serialize, Deserialize)]
 pub struct RedisGameInfo {
