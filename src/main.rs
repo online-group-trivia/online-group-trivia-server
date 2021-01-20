@@ -1,14 +1,17 @@
-mod database_logic;
+mod data_model;
+mod database;
 mod logic;
 mod websocket;
 
+use crate::data_model::GameInfo;
 use actix_cors::Cors;
 use actix_web::web::{Json, Query};
 use actix_web::{
-    get, post, put, web, web::Bytes, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
+    get, post, put, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use actix_web_actors::ws;
 use serde::Deserialize;
+use uuid::Uuid;
 
 extern crate simple_error;
 
@@ -36,17 +39,18 @@ async fn create(create_game_info: Json<CreateGameInfo>) -> impl Responder {
     }
 }
 
+#[serde(rename_all = "camelCase")]
 #[derive(Deserialize)]
 struct ManageGameQuery {
-    game_uuid: String,
+    game_id: Uuid,
 }
 
 #[get("/manage")]
 async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
-    match database_logic::get_game_info(manage_game_query.game_uuid.clone()) {
+    match logic::get_game_info(manage_game_query.game_id) {
         Ok(game_info) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
-            .body(game_info),
+            .json(game_info),
         Err(_) => HttpResponse::NotFound()
             .header("Access-Control-Allow-Origin", "*")
             .finish(),
@@ -54,14 +58,23 @@ async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
 }
 
 #[put("/save")]
-async fn save(bytes: Bytes, manage_game_query: Query<ManageGameQuery>) -> impl Responder {
-    match database_logic::update_game(
-        manage_game_query.game_uuid.clone(),
-        String::from_utf8(bytes.to_vec()).unwrap(),
-    ) {
+async fn save(game_info: Json<GameInfo>) -> impl Responder {
+    match logic::update_game(&game_info.0) {
         Ok(_) => HttpResponse::Ok()
             .header("Access-Control-Allow-Origin", "*")
             .finish(),
+        Err(_) => HttpResponse::InternalServerError()
+            .header("Access-Control-Allow-Origin", "*")
+            .finish(),
+    }
+}
+
+#[post("/start")]
+async fn start(game_id: Json<Uuid>) -> impl Responder {
+    match logic::create_room(&game_id.0) {
+        Ok(room_info) => HttpResponse::Ok()
+            .header("Access-Control-Allow-Origin", "*")
+            .json(room_info),
         Err(_) => HttpResponse::InternalServerError()
             .header("Access-Control-Allow-Origin", "*")
             .finish(),
@@ -82,6 +95,7 @@ async fn main() -> std::io::Result<()> {
             .service(create)
             .service(manage)
             .service(save)
+            .service(start)
             .service(web::resource("/ws/").route(web::get().to(ws_index)))
     })
     .bind(address)?
