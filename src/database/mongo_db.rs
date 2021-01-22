@@ -37,36 +37,36 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
     let coll = get_collection_handler("games").await?;
     let mut result = 0;
     match command {
-        UpdateGameCommand::AddQuestion(q) => {
+        UpdateGameCommand::AddQuestion { question } => {
             result = coll
                 .update_one(
                     doc! {"_id":id.to_string()},
-                    doc! {"$addToSet" : {"questions":q.to_owned()}},
+                    doc! {"$addToSet" : {"questions":question.to_owned()}},
                     None,
                 )
                 .await
                 .unwrap()
                 .matched_count;
         }
-        UpdateGameCommand::RemoveQuestion(q) => {
+        UpdateGameCommand::RemoveQuestion { question } => {
             coll.update_one(
                 doc! {"_id":id.to_string()},
-                doc! {"$pull" : {"questions":q.to_owned()}},
+                doc! {"$pull" : {"questions":question.to_owned()}},
                 None,
             )
-                .await
-                .unwrap()
-                .matched_count;
+            .await
+            .unwrap()
+            .matched_count;
         }
-        UpdateGameCommand::ChangeTitle(t) => {
+        UpdateGameCommand::ChangeTitle { title } => {
             coll.update_one(
                 doc! {"_id":id.to_string()},
-                doc! {"$set" : {"title":t.to_owned()}},
+                doc! {"$set" : {"title":title.to_owned()}},
                 None,
             )
-                .await
-                .unwrap()
-                .matched_count;
+            .await
+            .unwrap()
+            .matched_count;
         }
     }
 
@@ -92,82 +92,4 @@ async fn get_db_handler() -> Result<Database, Box<dyn Error>> {
 async fn get_collection_handler(name: &str) -> Result<Collection, Box<dyn Error>> {
     let db = get_db_handler().await?;
     Ok(db.collection(name))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::create;
-    use crate::data_model::{Participant, TeamInfo};
-    use crate::database::data_model::UpdateGameCommand::{
-        AddQuestion, ChangeTitle, RemoveQuestion,
-    };
-    use std::str::FromStr;
-
-    #[actix_rt::test]
-    async fn connection_opened_successfully() {
-        get_collection_handler("games").await.unwrap();
-    }
-
-    #[actix_rt::test]
-    async fn create_game_test() {
-        create_game(&"My cool game".to_string()).await.unwrap();
-    }
-
-    #[actix_rt::test]
-    async fn create_room_test() {
-        create_room(&RoomInfo {
-            id: "12345".to_owned(),
-            title: "my-title".to_string(),
-            teams_info: vec![
-                TeamInfo {
-                    name: "A".to_string(),
-                    participants: vec![Participant {
-                        name: "Avi".to_owned(),
-                    }],
-                    score: 50,
-                },
-                TeamInfo {
-                    name: "B".to_string(),
-                    participants: vec![Participant {
-                        name: "John".to_owned(),
-                    }],
-                    score: 50,
-                },
-            ],
-            questions: vec!["Question 1?".to_owned(), "Question 2?".to_owned()],
-        })
-            .await
-            .unwrap();
-    }
-
-    #[actix_rt::test]
-    async fn add_question_test() {
-        update_game(
-            &Uuid::from_str("a13c9ef9-d945-4172-b531-5a378bc7ae3e").unwrap(),
-            &AddQuestion(String::from("Question 4?")),
-        )
-            .await
-            .unwrap();
-    }
-
-    #[actix_rt::test]
-    async fn remove_question_test() {
-        update_game(
-            &Uuid::from_str("a13c9ef9-d945-4172-b531-5a378bc7ae3e").unwrap(),
-            &RemoveQuestion(String::from("why?")),
-        )
-            .await
-            .unwrap();
-    }
-
-    #[actix_rt::test]
-    async fn change_title_test() {
-        update_game(
-            &Uuid::from_str("a13c9ef9-d945-4172-b531-5a378bc7af3e").unwrap(),
-            &ChangeTitle(String::from("my-new-title")),
-        )
-            .await
-            .unwrap();
-    }
 }

@@ -1,36 +1,12 @@
-use crate::data_model::{RoomInfo, TeamInfo};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt;
 
 #[derive(Serialize, Deserialize)]
-pub struct RedisGameInfo {
-    pub title: String,
-    pub questions: Vec<String>,
-}
-
-#[serde(rename_all = "camelCase")]
-#[derive(Serialize, Deserialize)]
-pub struct RedisRoomInfo {
-    pub title: String,
-    pub teams_info: Vec<TeamInfo>,
-    pub questions: Vec<String>,
-}
-
-impl RedisRoomInfo {
-    pub fn new(room_info: &RoomInfo) -> RedisRoomInfo {
-        RedisRoomInfo {
-            title: room_info.title.clone(),
-            teams_info: room_info.teams_info.clone(),
-            questions: room_info.questions.clone(),
-        }
-    }
-}
-
 pub enum UpdateGameCommand {
-    AddQuestion(String),
-    RemoveQuestion(String),
-    ChangeTitle(String),
+    AddQuestion { question: String },
+    RemoveQuestion { question: String },
+    ChangeTitle { title: String },
 }
 
 #[derive(Debug)]
