@@ -54,9 +54,9 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
                 doc! {"$pull" : {"questions":q.to_owned()}},
                 None,
             )
-            .await
-            .unwrap()
-            .matched_count;
+                .await
+                .unwrap()
+                .matched_count;
         }
         UpdateGameCommand::ChangeTitle(t) => {
             coll.update_one(
@@ -64,11 +64,12 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
                 doc! {"$set" : {"title":t.to_owned()}},
                 None,
             )
-            .await
-            .unwrap()
-            .matched_count;
+                .await
+                .unwrap()
+                .matched_count;
         }
     }
+
     if result == 0 {
         return Err(Box::new(MyError("Oops".into())));
     }
@@ -136,8 +137,8 @@ mod tests {
             ],
             questions: vec!["Question 1?".to_owned(), "Question 2?".to_owned()],
         })
-        .await
-        .unwrap();
+            .await
+            .unwrap();
     }
 
     #[actix_rt::test]
@@ -146,8 +147,8 @@ mod tests {
             &Uuid::from_str("a13c9ef9-d945-4172-b531-5a378bc7ae3e").unwrap(),
             &AddQuestion(String::from("Question 4?")),
         )
-        .await
-        .unwrap();
+            .await
+            .unwrap();
     }
 
     #[actix_rt::test]
@@ -156,8 +157,8 @@ mod tests {
             &Uuid::from_str("a13c9ef9-d945-4172-b531-5a378bc7ae3e").unwrap(),
             &RemoveQuestion(String::from("why?")),
         )
-        .await
-        .unwrap();
+            .await
+            .unwrap();
     }
 
     #[actix_rt::test]
@@ -166,7 +167,7 @@ mod tests {
             &Uuid::from_str("a13c9ef9-d945-4172-b531-5a378bc7af3e").unwrap(),
             &ChangeTitle(String::from("my-new-title")),
         )
-        .await
-        .unwrap();
+            .await
+            .unwrap();
     }
 }
