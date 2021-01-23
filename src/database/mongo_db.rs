@@ -35,7 +35,7 @@ pub async fn get_game_info(game_id: &Uuid) -> Result<GameInfo, Box<dyn Error>> {
 
 pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), Box<dyn Error>> {
     let coll = get_collection_handler("games").await?;
-    let mut result = 0;
+    let result;
     match command {
         UpdateGameCommand::AddQuestion { question } => {
             result = coll
@@ -49,24 +49,26 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
                 .matched_count;
         }
         UpdateGameCommand::RemoveQuestion { question } => {
-            result = coll.update_one(
-                doc! {"_id":id.to_string()},
-                doc! {"$pull" : {"questions":question.to_owned()}},
-                None,
-            )
-            .await
-            .unwrap()
-            .matched_count;
+            result = coll
+                .update_one(
+                    doc! {"_id":id.to_string()},
+                    doc! {"$pull" : {"questions":question.to_owned()}},
+                    None,
+                )
+                .await
+                .unwrap()
+                .matched_count;
         }
         UpdateGameCommand::ChangeTitle { title } => {
-            result = coll.update_one(
-                doc! {"_id":id.to_string()},
-                doc! {"$set" : {"title":title.to_owned()}},
-                None,
-            )
-            .await
-            .unwrap()
-            .matched_count;
+            result = coll
+                .update_one(
+                    doc! {"_id":id.to_string()},
+                    doc! {"$set" : {"title":title.to_owned()}},
+                    None,
+                )
+                .await
+                .unwrap()
+                .matched_count;
         }
     }
 
