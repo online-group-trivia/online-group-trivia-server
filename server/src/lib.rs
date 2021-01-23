@@ -1,11 +1,11 @@
+use database::mongo_db;
+use interfaces::{GameInfo, RoomInfo, TeamInfo};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::error::Error;
-use database::mongo_db;
-use interfaces::{GameInfo, RoomInfo, TeamInfo};
 use uuid::Uuid;
 
-use interfaces::{UpdateGameCommand};
+use interfaces::UpdateGameCommand;
 
 pub async fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
     mongo_db::create_game(title).await

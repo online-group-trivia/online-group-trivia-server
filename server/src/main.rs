@@ -13,7 +13,6 @@ use uuid::Uuid;
 
 use interfaces::UpdateGameCommand;
 
-
 async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
     println!("{:?}", r);
     let res = ws::start(websocket::websocket_handler::MyWebSocket::new(), &r, stream);

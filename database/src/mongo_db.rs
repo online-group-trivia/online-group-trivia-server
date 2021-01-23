@@ -1,11 +1,11 @@
+use crate::data_model::MyError;
 use bson::document::Document;
+use interfaces::{GameInfo, RoomInfo, UpdateGameCommand};
 use mongodb::{bson, bson::doc, bson::Bson, options::ClientOptions, Client, Collection, Database};
 use serde::Serialize;
 use std::error::Error;
 use std::fmt::Debug;
 use uuid::Uuid;
-use crate::data_model::MyError;
-use interfaces::{GameInfo, RoomInfo, UpdateGameCommand};
 
 pub async fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
     let id = Uuid::new_v4();
