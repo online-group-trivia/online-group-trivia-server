@@ -1,6 +1,6 @@
-use crate::data_model::{GameInfo, RoomInfo};
-use crate::database::data_model::{MyError, UpdateGameCommand};
+use crate::data_model::MyError;
 use bson::document::Document;
+use interfaces::{GameInfo, RoomInfo, UpdateGameCommand};
 use mongodb::{bson, bson::doc, bson::Bson, options::ClientOptions, Client, Collection, Database};
 use serde::Serialize;
 use std::error::Error;

@@ -30,3 +30,10 @@ pub struct TeamInfo {
 pub struct Participant {
     pub name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub enum UpdateGameCommand {
+    AddQuestion { question: String },
+    RemoveQuestion { question: String },
+    ChangeTitle { title: String },
+}

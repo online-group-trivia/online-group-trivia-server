@@ -1,4 +1,4 @@
-use crate::websocket::websocket_routing::handle_client_message;
+use crate::websocket_routing::handle_client_message;
 use actix::prelude::*;
 use actix_web_actors::ws;
 use std::time::{Duration, Instant};

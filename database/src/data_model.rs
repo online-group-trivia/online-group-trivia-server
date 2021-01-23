@@ -1,13 +1,5 @@
-use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt;
-
-#[derive(Serialize, Deserialize)]
-pub enum UpdateGameCommand {
-    AddQuestion { question: String },
-    RemoveQuestion { question: String },
-    ChangeTitle { title: String },
-}
 
 #[derive(Debug)]
 pub struct MyError(pub String);
