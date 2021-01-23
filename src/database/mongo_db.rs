@@ -2,9 +2,9 @@ use crate::data_model::{GameInfo, RoomInfo};
 use crate::database::data_model::{MyError, UpdateGameCommand};
 use bson::document::Document;
 use mongodb::{bson, bson::doc, bson::Bson, options::ClientOptions, Client, Collection, Database};
-use serde::export::fmt::Debug;
 use serde::Serialize;
 use std::error::Error;
+use std::fmt::Debug;
 use uuid::Uuid;
 
 pub async fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
