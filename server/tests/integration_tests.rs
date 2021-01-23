@@ -2,7 +2,6 @@ use interfaces::UpdateGameCommand;
 use server;
 
 #[actix_rt::test]
-
 // Should be run when mongodb is running
 #[ignore]
 async fn create_game_test() {
@@ -20,8 +19,8 @@ async fn create_game_test() {
             question: "q1".to_string(),
         },
     )
-        .await
-        .unwrap();
+    .await
+    .unwrap();
     let new_game_info = server::get_game_info(game_info.id).await.unwrap();
     assert_eq!(new_game_info.questions[0], "q1");
 
@@ -31,8 +30,8 @@ async fn create_game_test() {
             question: "q1".to_string(),
         },
     )
-        .await
-        .unwrap();
+    .await
+    .unwrap();
 
     let new_game_info = server::get_game_info(game_info.id).await.unwrap();
     assert_eq!(new_game_info.questions.len(), 0);
@@ -43,8 +42,8 @@ async fn create_game_test() {
             title: "new-title!!!".to_string(),
         },
     )
-        .await
-        .unwrap();
+    .await
+    .unwrap();
 
     let new_game_info = server::get_game_info(game_info.id).await.unwrap();
     assert_eq!(new_game_info.title, "new-title!!!");
