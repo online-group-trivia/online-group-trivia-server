@@ -49,7 +49,7 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
                 .matched_count;
         }
         UpdateGameCommand::RemoveQuestion { question } => {
-            coll.update_one(
+            result = coll.update_one(
                 doc! {"_id":id.to_string()},
                 doc! {"$pull" : {"questions":question.to_owned()}},
                 None,
@@ -59,7 +59,7 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
             .matched_count;
         }
         UpdateGameCommand::ChangeTitle { title } => {
-            coll.update_one(
+            result = coll.update_one(
                 doc! {"_id":id.to_string()},
                 doc! {"$set" : {"title":title.to_owned()}},
                 None,
