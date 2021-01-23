@@ -1,2 +1,2 @@
 pub mod data_model;
-pub mod database_logic;
+pub(crate) mod mongo_db;
