@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct GameInfo {
@@ -29,4 +29,11 @@ pub struct TeamInfo {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Participant {
     pub name: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum UpdateGameCommand {
+    AddQuestion { question: String },
+    RemoveQuestion { question: String },
+    ChangeTitle { title: String },
 }

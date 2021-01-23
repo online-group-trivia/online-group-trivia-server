@@ -1,7 +1,7 @@
-use crate::websocket::websocket_routing::handle_client_message;
 use actix::prelude::*;
 use actix_web_actors::ws;
 use std::time::{Duration, Instant};
+use crate::websocket_routing::handle_client_message;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);

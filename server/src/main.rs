@@ -1,9 +1,5 @@
-mod data_model;
-mod database;
-mod logic;
-mod websocket;
+mod lib;
 
-use crate::database::data_model::UpdateGameCommand;
 use actix_cors::Cors;
 use actix_web::middleware::Logger;
 use actix_web::web::{Json, Query};
@@ -15,7 +11,8 @@ use env_logger::Env;
 use serde::Deserialize;
 use uuid::Uuid;
 
-extern crate simple_error;
+use interfaces::UpdateGameCommand;
+
 
 async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
     println!("{:?}", r);
@@ -31,7 +28,7 @@ struct CreateGameInfo {
 
 #[post("/create")]
 async fn create(create_game_info: Json<CreateGameInfo>) -> impl Responder {
-    match logic::create_game(&create_game_info.title).await {
+    match lib::create_game(&create_game_info.title).await {
         Ok(response_body) => HttpResponse::Ok().json(response_body),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
@@ -45,7 +42,7 @@ struct ManageGameQuery {
 
 #[get("/manage")]
 async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
-    match logic::get_game_info(manage_game_query.game_id).await {
+    match lib::get_game_info(manage_game_query.game_id).await {
         Ok(game_info) => HttpResponse::Ok().json(game_info),
         Err(_) => HttpResponse::NotFound().finish(),
     }
@@ -56,7 +53,7 @@ async fn save(
     game_id: Query<ManageGameQuery>,
     update_game_command: Json<UpdateGameCommand>,
 ) -> impl Responder {
-    match logic::update_game(&game_id.game_id, &update_game_command.0).await {
+    match lib::update_game(&game_id.game_id, &update_game_command.0).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
@@ -64,7 +61,7 @@ async fn save(
 
 #[post("/start")]
 async fn start(game_id: Json<Uuid>) -> impl Responder {
-    match logic::create_room(&game_id.0).await {
+    match lib::create_room(&game_id.0).await {
         Ok(room_info) => HttpResponse::Ok().json(room_info),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
