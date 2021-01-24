@@ -4,7 +4,7 @@ ENV PKG_CONFIG_ALLOW_CROSS=1
 WORKDIR /usr/src/app
 COPY . .
 
-RUN cargo install --path .
+RUN cargo install --path server
 
 FROM gcr.io/distroless/cc-debian10
 
