@@ -19,6 +19,13 @@ pub struct RoomInfo {
     pub questions: Vec<String>,
 }
 
+#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct JoinRoomRequest {
+    pub id: String,
+    pub display_name: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TeamInfo {
     pub name: String,
@@ -36,4 +43,12 @@ pub enum UpdateGameCommand {
     AddQuestion { question: String },
     RemoveQuestion { question: String },
     ChangeTitle { title: String },
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum UpdateRoomCommand {
+    AddParticipant {
+        participant: Participant,
+        team_index: usize,
+    },
 }

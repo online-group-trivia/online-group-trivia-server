@@ -1,5 +1,5 @@
 use database::mongo_db;
-use interfaces::{GameInfo, RoomInfo, TeamInfo};
+use interfaces::{GameInfo, JoinRoomRequest, Participant, RoomInfo, TeamInfo, UpdateRoomCommand};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::error::Error;
@@ -60,4 +60,27 @@ fn create_id(n: usize) -> String {
         .map(char::from)
         .map(|c| c.to_ascii_lowercase())
         .collect()
+}
+
+pub async fn join_room(join_room_request: JoinRoomRequest) -> Result<RoomInfo, Box<dyn Error>> {
+    let room_info = mongo_db::get_room_info(&join_room_request.id).await?;
+    let smallest_team_idx = get_smallest_team_idx(&room_info);
+    let join_room_cmd = UpdateRoomCommand::AddParticipant {
+        participant: Participant {
+            name: join_room_request.display_name,
+        },
+        team_index: smallest_team_idx,
+    };
+
+    Ok(mongo_db::update_room(&join_room_request.id, join_room_cmd).await?)
+}
+
+fn get_smallest_team_idx(room_info: &RoomInfo) -> usize {
+    room_info
+        .teams_info
+        .iter()
+        .enumerate()
+        .min_by_key(|(_, team_info)| team_info.participants.len())
+        .map(|(i, _)| i)
+        .unwrap()
 }
