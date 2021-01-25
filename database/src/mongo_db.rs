@@ -1,10 +1,8 @@
 use crate::data_model::MyError;
-use bson::document::Document;
-use interfaces::{GameInfo, RoomInfo, UpdateGameCommand};
+use interfaces::{GameInfo, RoomInfo, UpdateGameCommand, UpdateRoomCommand};
+use mongodb::options::{FindOneAndUpdateOptions, ReturnDocument};
 use mongodb::{bson, bson::doc, bson::Bson, options::ClientOptions, Client, Collection, Database};
-use serde::Serialize;
 use std::error::Error;
-use std::fmt::Debug;
 use uuid::Uuid;
 
 pub async fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
@@ -15,13 +13,9 @@ pub async fn create_game(title: &String) -> Result<GameInfo, Box<dyn Error>> {
         title: title.to_owned(),
         questions: vec![],
     };
-    coll.insert_one(to_document(&game_info)?, None).await?;
+    coll.insert_one(bson::to_document(&game_info)?, None)
+        .await?;
     Ok(game_info)
-}
-
-pub fn to_document<T: ?Sized + Serialize + Debug>(value: &T) -> Result<Document, Box<dyn Error>> {
-    let bson = bson::to_bson(value).unwrap();
-    Ok(bson.as_document().unwrap().to_owned())
 }
 
 pub async fn get_game_info(game_id: &Uuid) -> Result<GameInfo, Box<dyn Error>> {
@@ -29,7 +23,7 @@ pub async fn get_game_info(game_id: &Uuid) -> Result<GameInfo, Box<dyn Error>> {
     let game_info_doc = coll
         .find_one(doc! {"_id":game_id.to_string()}, None)
         .await?
-        .expect("Document not found.");
+        .expect("Game not found.");
     Ok(bson::from_bson(Bson::Document(game_info_doc))?)
 }
 
@@ -81,8 +75,19 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
 
 pub async fn create_room(room_info: &RoomInfo) -> Result<(), Box<dyn Error>> {
     let coll = get_collection_handler("rooms").await?;
-    coll.insert_one(to_document(&room_info)?, None).await?;
+    coll.insert_one(bson::to_document(&room_info)?, None)
+        .await?;
     Ok(())
+}
+
+pub async fn get_room_info(id: &String) -> Result<RoomInfo, Box<dyn Error>> {
+    let rooms = get_collection_handler("rooms").await?;
+    let room_info_doc = rooms
+        .find_one(doc! {"_id":id}, None)
+        .await?
+        .expect("Room not found.");
+
+    Ok(bson::from_bson(Bson::Document(room_info_doc))?)
 }
 
 async fn get_db_handler() -> Result<Database, Box<dyn Error>> {
@@ -94,4 +99,33 @@ async fn get_db_handler() -> Result<Database, Box<dyn Error>> {
 async fn get_collection_handler(name: &str) -> Result<Collection, Box<dyn Error>> {
     let db = get_db_handler().await?;
     Ok(db.collection(name))
+}
+
+pub async fn update_room(
+    id: &String,
+    command: UpdateRoomCommand,
+) -> Result<RoomInfo, Box<dyn Error>> {
+    let coll = get_collection_handler("rooms").await?;
+    let result;
+    match command {
+        UpdateRoomCommand::AddParticipant {
+            participant,
+            team_index,
+        } => {
+            let s = format!("teamsInfo.{}.participants", team_index);
+            result = coll
+                .find_one_and_update(
+                    doc! {"_id":id.to_string()},
+                    doc! {"$addToSet" : {s: bson::to_bson(&participant)?}},
+                    Some(
+                        FindOneAndUpdateOptions::builder()
+                            .return_document(ReturnDocument::After)
+                            .build(),
+                    ),
+                )
+                .await?
+                .unwrap()
+        }
+    }
+    Ok(bson::from_bson(bson::Bson::Document(result))?)
 }

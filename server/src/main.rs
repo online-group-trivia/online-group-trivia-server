@@ -8,10 +8,10 @@ use actix_web::{
 };
 use actix_web_actors::ws;
 use env_logger::Env;
+use interfaces::{JoinRoomRequest, UpdateGameCommand};
+use log::error;
 use serde::Deserialize;
 use uuid::Uuid;
-
-use interfaces::UpdateGameCommand;
 
 async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
     println!("{:?}", r);
@@ -66,6 +66,17 @@ async fn start(game_id: Json<Uuid>) -> impl Responder {
     }
 }
 
+#[post("/join")]
+async fn join(join_room_request: Json<JoinRoomRequest>) -> impl Responder {
+    match lib::join_room(join_room_request.0).await {
+        Ok(room_info) => HttpResponse::Ok().json(room_info),
+        Err(err) => {
+            error!("{}", err.to_string());
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let address = "0.0.0.0:9631";
@@ -85,6 +96,7 @@ async fn main() -> std::io::Result<()> {
             .service(manage)
             .service(save)
             .service(start)
+            .service(join)
             .service(web::resource("/ws/").route(web::get().to(ws_index)))
     })
     .bind(address)?
