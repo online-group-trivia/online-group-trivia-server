@@ -23,7 +23,7 @@ pub async fn get_game_info(game_id: &Uuid) -> Result<GameInfo, Box<dyn Error>> {
     let game_info_doc = coll
         .find_one(doc! {"_id":game_id.to_string()}, None)
         .await?
-        .expect("Game not found.");
+        .ok_or("Game not found.")?;
     Ok(bson::from_bson(Bson::Document(game_info_doc))?)
 }
 
@@ -38,8 +38,7 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
                     doc! {"$addToSet" : {"questions":question.to_owned()}},
                     None,
                 )
-                .await
-                .unwrap()
+                .await?
                 .matched_count;
         }
         UpdateGameCommand::RemoveQuestion { question } => {
@@ -49,8 +48,7 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
                     doc! {"$pull" : {"questions":question.to_owned()}},
                     None,
                 )
-                .await
-                .unwrap()
+                .await?
                 .matched_count;
         }
         UpdateGameCommand::ChangeTitle { title } => {
@@ -60,8 +58,7 @@ pub async fn update_game(id: &Uuid, command: &UpdateGameCommand) -> Result<(), B
                     doc! {"$set" : {"title":title.to_owned()}},
                     None,
                 )
-                .await
-                .unwrap()
+                .await?
                 .matched_count;
         }
     }
@@ -85,7 +82,7 @@ pub async fn get_room_info(id: &String) -> Result<RoomInfo, Box<dyn Error>> {
     let room_info_doc = rooms
         .find_one(doc! {"_id":id}, None)
         .await?
-        .expect("Room not found.");
+        .ok_or("Room not found.")?;
 
     Ok(bson::from_bson(Bson::Document(room_info_doc))?)
 }
@@ -124,7 +121,7 @@ pub async fn update_room(
                     ),
                 )
                 .await?
-                .unwrap()
+                .ok_or("Failed to retrieve document.")?;
         }
     }
     Ok(bson::from_bson(bson::Bson::Document(result))?)
