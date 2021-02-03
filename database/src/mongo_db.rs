@@ -123,7 +123,7 @@ impl GroupTriviaDatabase for MongoDb {
 }
 
 async fn get_db_handler() -> Result<Database, Box<dyn Error>> {
-    let client_options = ClientOptions::parse("mongodb://root:example@localhost:27017").await?;
+    let client_options = ClientOptions::parse("mongodb://root:example@mongo:27017").await?;
     let client = Client::with_options(client_options)?;
     Ok(client.database("app"))
 }
