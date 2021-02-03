@@ -11,3 +11,4 @@ serde = { version = "1.0.120", features = ["derive"] }
 mongodb = "1.1.1"
 log = "0.4.13"
 bson = "1.1.0"
+async-trait = "0.1.42"
