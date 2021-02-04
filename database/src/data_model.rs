@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use interfaces::{GameInfo, RoomInfo, UpdateGameCommand, UpdateRoomCommand};
+use mongodb::Client;
 use std::error::Error;
 use std::fmt;
 use uuid::Uuid;
@@ -15,7 +16,9 @@ impl fmt::Display for MyError {
 
 impl Error for MyError {}
 
-pub struct MongoDb {}
+pub struct MongoDb {
+    pub client: Client,
+}
 
 #[async_trait]
 pub trait GroupTriviaDatabase {

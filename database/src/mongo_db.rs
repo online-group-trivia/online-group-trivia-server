@@ -6,11 +6,33 @@ use mongodb::{bson, bson::doc, bson::Bson, options::ClientOptions, Client, Colle
 use std::error::Error;
 use uuid::Uuid;
 
+async fn get_client() -> Result<Client, Box<dyn Error>> {
+    let client_options = ClientOptions::parse("mongodb://root:example@mongo:27017").await?;
+    Ok(Client::with_options(client_options)?)
+}
+
+impl MongoDb {
+    pub async fn new() -> MongoDb {
+        MongoDb {
+            client: get_client().await.unwrap(),
+        }
+    }
+
+    async fn get_db_handler(&self) -> Result<Database, Box<dyn Error>> {
+        Ok(self.client.database("app"))
+    }
+
+    async fn get_collection_handler(&self, name: &str) -> Result<Collection, Box<dyn Error>> {
+        let db = self.get_db_handler().await?;
+        Ok(db.collection(name))
+    }
+}
+
 #[async_trait]
 impl GroupTriviaDatabase for MongoDb {
     async fn create_game(&self, title: &String) -> Result<GameInfo, Box<dyn Error>> {
         let id = Uuid::new_v4();
-        let coll = get_collection_handler("games").await?;
+        let coll = self.get_collection_handler("games").await?;
         let game_info = GameInfo {
             id,
             title: title.to_owned(),
@@ -22,7 +44,7 @@ impl GroupTriviaDatabase for MongoDb {
     }
 
     async fn get_game_info(&self, game_id: &Uuid) -> Result<GameInfo, Box<dyn Error>> {
-        let coll = get_collection_handler("games").await?;
+        let coll = self.get_collection_handler("games").await?;
         let game_info_doc = coll
             .find_one(doc! {"_id":game_id.to_string()}, None)
             .await?
@@ -34,7 +56,7 @@ impl GroupTriviaDatabase for MongoDb {
         id: &Uuid,
         command: &UpdateGameCommand,
     ) -> Result<(), Box<dyn Error>> {
-        let coll = get_collection_handler("games").await?;
+        let coll = self.get_collection_handler("games").await?;
         let result;
         match command {
             UpdateGameCommand::AddQuestion { question } => {
@@ -76,13 +98,13 @@ impl GroupTriviaDatabase for MongoDb {
         Ok(())
     }
     async fn create_room(&self, room_info: &RoomInfo) -> Result<(), Box<dyn Error>> {
-        let coll = get_collection_handler("rooms").await?;
+        let coll = self.get_collection_handler("rooms").await?;
         coll.insert_one(bson::to_document(&room_info)?, None)
             .await?;
         Ok(())
     }
     async fn get_room_info(&self, id: &String) -> Result<RoomInfo, Box<dyn Error>> {
-        let rooms = get_collection_handler("rooms").await?;
+        let rooms = self.get_collection_handler("rooms").await?;
         let room_info_doc = rooms
             .find_one(doc! {"_id":id}, None)
             .await?
@@ -96,7 +118,7 @@ impl GroupTriviaDatabase for MongoDb {
         id: &String,
         command: UpdateRoomCommand,
     ) -> Result<RoomInfo, Box<dyn Error>> {
-        let coll = get_collection_handler("rooms").await?;
+        let coll = self.get_collection_handler("rooms").await?;
         let result;
         match command {
             UpdateRoomCommand::AddParticipant {
@@ -120,15 +142,4 @@ impl GroupTriviaDatabase for MongoDb {
         }
         Ok(bson::from_bson(bson::Bson::Document(result))?)
     }
-}
-
-async fn get_db_handler() -> Result<Database, Box<dyn Error>> {
-    let client_options = ClientOptions::parse("mongodb://root:example@mongo:27017").await?;
-    let client = Client::with_options(client_options)?;
-    Ok(client.database("app"))
-}
-
-async fn get_collection_handler(name: &str) -> Result<Collection, Box<dyn Error>> {
-    let db = get_db_handler().await?;
-    Ok(db.collection(name))
 }

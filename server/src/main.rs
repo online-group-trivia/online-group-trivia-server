@@ -104,7 +104,7 @@ async fn main() -> std::io::Result<()> {
     let address = "0.0.0.0:9631";
 
     let db: Mutex<Box<dyn data_model::GroupTriviaDatabase + Send>> =
-        Mutex::new(Box::new(database::data_model::MongoDb {}));
+        Mutex::new(Box::new(database::data_model::MongoDb::new().await));
     let app_state = Data::new(AppState { db });
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     HttpServer::new(move || {
