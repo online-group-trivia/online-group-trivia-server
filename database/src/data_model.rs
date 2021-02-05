@@ -16,6 +16,7 @@ impl fmt::Display for MyError {
 
 impl Error for MyError {}
 
+#[derive(Clone)]
 pub struct MongoDb {
     pub client: Client,
 }

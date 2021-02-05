@@ -7,7 +7,7 @@ use std::error::Error;
 use uuid::Uuid;
 
 async fn get_client() -> Result<Client, Box<dyn Error>> {
-    let client_options = ClientOptions::parse("mongodb://root:example@mongo:27017").await?;
+    let client_options = ClientOptions::parse("mongodb://root:example@localhost:27017").await?;
     Ok(Client::with_options(client_options)?)
 }
 

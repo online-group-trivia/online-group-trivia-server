@@ -8,9 +8,11 @@ use actix_web::{
 use actix_web_actors::ws;
 use database;
 use database::data_model;
+use database::data_model::MongoDb;
 use env_logger::Env;
 use interfaces::{JoinRoomRequest, UpdateGameCommand};
 use log::error;
+use log::info;
 use serde::Deserialize;
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -32,7 +34,7 @@ async fn create(
     create_game_info: Json<CreateGameInfo>,
     app_state: Data<AppState>,
 ) -> impl Responder {
-    match lib::create_game(&create_game_info.title, &*app_state.db.lock().unwrap()).await {
+    match lib::create_game(&create_game_info.title, &app_state.db).await {
         Ok(response_body) => HttpResponse::Ok().json(response_body),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
@@ -49,7 +51,7 @@ async fn manage(
     manage_game_query: Query<ManageGameQuery>,
     app_state: Data<AppState>,
 ) -> impl Responder {
-    match lib::get_game_info(manage_game_query.game_id, &*app_state.db.lock().unwrap()).await {
+    match lib::get_game_info(manage_game_query.game_id, &app_state.db).await {
         Ok(game_info) => HttpResponse::Ok().json(game_info),
         Err(_) => HttpResponse::NotFound().finish(),
     }
@@ -61,13 +63,7 @@ async fn save(
     update_game_command: Json<UpdateGameCommand>,
     app_state: Data<AppState>,
 ) -> impl Responder {
-    match lib::update_game(
-        &game_id.game_id,
-        &update_game_command.0,
-        &*app_state.db.lock().unwrap(),
-    )
-    .await
-    {
+    match lib::update_game(&game_id.game_id, &update_game_command.0, &app_state.db).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
@@ -75,7 +71,7 @@ async fn save(
 
 #[post("/start")]
 async fn start(game_id: Json<Uuid>, app_state: Data<AppState>) -> impl Responder {
-    match lib::create_room(&game_id.0, &*app_state.db.lock().unwrap()).await {
+    match lib::create_room(&game_id.0, &app_state.db).await {
         Ok(room_info) => HttpResponse::Ok().json(room_info),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
@@ -86,7 +82,7 @@ async fn join(
     join_room_request: Json<JoinRoomRequest>,
     app_state: Data<AppState>,
 ) -> impl Responder {
-    match lib::join_room(join_room_request.0, &*app_state.db.lock().unwrap()).await {
+    match lib::join_room(join_room_request.0, &app_state.db).await {
         Ok(room_info) => HttpResponse::Ok().json(room_info),
         Err(err) => {
             error!("{}", err.to_string());
@@ -96,20 +92,19 @@ async fn join(
 }
 
 struct AppState {
-    db: Mutex<Box<dyn data_model::GroupTriviaDatabase + Send + 'static>>,
+    db: MongoDb,
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let address = "0.0.0.0:9631";
 
-    let db: Mutex<Box<dyn data_model::GroupTriviaDatabase + Send>> =
-        Mutex::new(Box::new(database::data_model::MongoDb::new().await));
-    let app_state = Data::new(AppState { db });
+    let db = database::data_model::MongoDb::new().await;
+
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     HttpServer::new(move || {
         App::new()
-            .app_data(app_state.clone())
+            .data(AppState { db: db.clone() })
             .wrap(Logger::default())
             .wrap(
                 Cors::default()
