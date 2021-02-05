@@ -1,3 +1,4 @@
+use database::data_model::GroupTriviaDatabase;
 use interfaces::UpdateGameCommand;
 use server;
 
@@ -5,12 +6,13 @@ use server;
 // Should be run when mongodb is running
 #[ignore]
 async fn create_game_test() {
+    let db: Box<dyn GroupTriviaDatabase> = Box::new(database::data_model::MongoDb::new().await);
     let game_title = "test-game".to_owned();
-    let game_info = server::create_game(&game_title).await.unwrap();
+    let game_info = server::create_game(&game_title, &db).await.unwrap();
     assert_eq!(game_info.title, game_title);
     assert_eq!(game_info.questions.len(), 0);
 
-    let new_game_info = server::get_game_info(game_info.id).await.unwrap();
+    let new_game_info = server::get_game_info(game_info.id, &db).await.unwrap();
     assert_eq!(game_info.id, new_game_info.id);
 
     server::update_game(
@@ -18,10 +20,11 @@ async fn create_game_test() {
         &UpdateGameCommand::AddQuestion {
             question: "q1".to_string(),
         },
+        &db,
     )
     .await
     .unwrap();
-    let new_game_info = server::get_game_info(game_info.id).await.unwrap();
+    let new_game_info = server::get_game_info(game_info.id, &db).await.unwrap();
     assert_eq!(new_game_info.questions[0], "q1");
 
     server::update_game(
@@ -29,11 +32,12 @@ async fn create_game_test() {
         &UpdateGameCommand::RemoveQuestion {
             question: "q1".to_string(),
         },
+        &db,
     )
     .await
     .unwrap();
 
-    let new_game_info = server::get_game_info(game_info.id).await.unwrap();
+    let new_game_info = server::get_game_info(game_info.id, &db).await.unwrap();
     assert_eq!(new_game_info.questions.len(), 0);
 
     server::update_game(
@@ -41,10 +45,11 @@ async fn create_game_test() {
         &UpdateGameCommand::ChangeTitle {
             title: "new-title!!!".to_string(),
         },
+        &db,
     )
     .await
     .unwrap();
 
-    let new_game_info = server::get_game_info(game_info.id).await.unwrap();
+    let new_game_info = server::get_game_info(game_info.id, &db).await.unwrap();
     assert_eq!(new_game_info.title, "new-title!!!");
 }

@@ -7,14 +7,11 @@ use actix_web::{
 };
 use actix_web_actors::ws;
 use database;
-use database::data_model;
-use database::data_model::MongoDb;
+use database::data_model::GroupTriviaDatabase;
 use env_logger::Env;
 use interfaces::{JoinRoomRequest, UpdateGameCommand};
 use log::error;
-use log::info;
 use serde::Deserialize;
-use std::sync::Mutex;
 use uuid::Uuid;
 
 async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
@@ -92,7 +89,7 @@ async fn join(
 }
 
 struct AppState {
-    db: MongoDb,
+    db: Box<dyn GroupTriviaDatabase>,
 }
 
 #[actix_web::main]
@@ -104,7 +101,9 @@ async fn main() -> std::io::Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     HttpServer::new(move || {
         App::new()
-            .data(AppState { db: db.clone() })
+            .data(AppState {
+                db: Box::new(db.clone()),
+            })
             .wrap(Logger::default())
             .wrap(
                 Cors::default()

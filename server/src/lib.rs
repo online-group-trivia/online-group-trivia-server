@@ -1,30 +1,38 @@
-use database::data_model;
 use interfaces::{GameInfo, JoinRoomRequest, Participant, RoomInfo, TeamInfo, UpdateRoomCommand};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::error::Error;
 use uuid::Uuid;
 
-use database::data_model::{GroupTriviaDatabase, MongoDb};
+use database::data_model::GroupTriviaDatabase;
 use interfaces::UpdateGameCommand;
 
-pub async fn create_game(title: &String, db: &MongoDb) -> Result<GameInfo, Box<dyn Error>> {
+pub async fn create_game(
+    title: &String,
+    db: &Box<dyn GroupTriviaDatabase>,
+) -> Result<GameInfo, Box<dyn Error>> {
     db.create_game(title).await
 }
 
 pub async fn update_game(
     id: &Uuid,
     command: &UpdateGameCommand,
-    db: &MongoDb,
+    db: &Box<dyn GroupTriviaDatabase>,
 ) -> Result<(), Box<dyn Error>> {
     db.update_game(id, command).await
 }
 
-pub async fn get_game_info(id: Uuid, db: &MongoDb) -> Result<GameInfo, Box<dyn Error>> {
+pub async fn get_game_info(
+    id: Uuid,
+    db: &Box<dyn GroupTriviaDatabase>,
+) -> Result<GameInfo, Box<dyn Error>> {
     db.get_game_info(&id).await
 }
 
-pub async fn create_room(game_id: &Uuid, db: &MongoDb) -> Result<RoomInfo, Box<dyn Error>> {
+pub async fn create_room(
+    game_id: &Uuid,
+    db: &Box<dyn GroupTriviaDatabase>,
+) -> Result<RoomInfo, Box<dyn Error>> {
     let game_info = db.get_game_info(game_id).await?;
     let room_id = create_room_id();
 
@@ -69,7 +77,7 @@ fn create_id(n: usize) -> String {
 
 pub async fn join_room(
     join_room_request: JoinRoomRequest,
-    db: &MongoDb,
+    db: &Box<dyn GroupTriviaDatabase>,
 ) -> Result<RoomInfo, Box<dyn Error>> {
     let room_info = db.get_room_info(&join_room_request.id).await?;
     let smallest_team_idx = get_smallest_team_idx(&room_info);
