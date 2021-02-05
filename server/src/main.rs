@@ -1,12 +1,13 @@
 mod lib;
-
 use actix_cors::Cors;
 use actix_web::middleware::Logger;
-use actix_web::web::{Json, Query};
+use actix_web::web::{Data, Json, Query};
 use actix_web::{
     get, middleware, post, put, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use actix_web_actors::ws;
+use database;
+use database::data_model::GroupTriviaDatabase;
 use env_logger::Env;
 use interfaces::{JoinRoomRequest, UpdateGameCommand};
 use log::error;
@@ -26,8 +27,11 @@ struct CreateGameInfo {
 }
 
 #[post("/create")]
-async fn create(create_game_info: Json<CreateGameInfo>) -> impl Responder {
-    match lib::create_game(&create_game_info.title).await {
+async fn create(
+    create_game_info: Json<CreateGameInfo>,
+    app_state: Data<AppState>,
+) -> impl Responder {
+    match lib::create_game(&create_game_info.title, &app_state.db).await {
         Ok(response_body) => HttpResponse::Ok().json(response_body),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
@@ -40,8 +44,11 @@ struct ManageGameQuery {
 }
 
 #[get("/manage")]
-async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
-    match lib::get_game_info(manage_game_query.game_id).await {
+async fn manage(
+    manage_game_query: Query<ManageGameQuery>,
+    app_state: Data<AppState>,
+) -> impl Responder {
+    match lib::get_game_info(manage_game_query.game_id, &app_state.db).await {
         Ok(game_info) => HttpResponse::Ok().json(game_info),
         Err(_) => HttpResponse::NotFound().finish(),
     }
@@ -51,24 +58,28 @@ async fn manage(manage_game_query: Query<ManageGameQuery>) -> impl Responder {
 async fn save(
     game_id: Query<ManageGameQuery>,
     update_game_command: Json<UpdateGameCommand>,
+    app_state: Data<AppState>,
 ) -> impl Responder {
-    match lib::update_game(&game_id.game_id, &update_game_command.0).await {
+    match lib::update_game(&game_id.game_id, &update_game_command.0, &app_state.db).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }
 
 #[post("/start")]
-async fn start(game_id: Json<Uuid>) -> impl Responder {
-    match lib::create_room(&game_id.0).await {
+async fn start(game_id: Json<Uuid>, app_state: Data<AppState>) -> impl Responder {
+    match lib::create_room(&game_id.0, &app_state.db).await {
         Ok(room_info) => HttpResponse::Ok().json(room_info),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }
 
 #[post("/join")]
-async fn join(join_room_request: Json<JoinRoomRequest>) -> impl Responder {
-    match lib::join_room(join_room_request.0).await {
+async fn join(
+    join_room_request: Json<JoinRoomRequest>,
+    app_state: Data<AppState>,
+) -> impl Responder {
+    match lib::join_room(join_room_request.0, &app_state.db).await {
         Ok(room_info) => HttpResponse::Ok().json(room_info),
         Err(err) => {
             error!("{}", err.to_string());
@@ -77,13 +88,22 @@ async fn join(join_room_request: Json<JoinRoomRequest>) -> impl Responder {
     }
 }
 
+struct AppState {
+    db: Box<dyn GroupTriviaDatabase>,
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let address = "0.0.0.0:9631";
 
+    let db = database::data_model::MongoDb::new().await;
+
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
+            .data(AppState {
+                db: Box::new(db.clone()),
+            })
             .wrap(Logger::default())
             .wrap(
                 Cors::default()
